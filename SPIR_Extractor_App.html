@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPIR Extractor Pro</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script> window.onload = function() { document.addEventListener("contextmenu", function(event) { event.preventDefault(); alert("Right click is disabled on this site."); }); }; </script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -1129,7 +1130,7 @@ function showToast(msg, type='success') {
   t.innerHTML = (type === 'success' ? '✓' : '✕') + ' &nbsp; ' + msg;
   setTimeout(() => t.classList.remove('show'), 3500);
 }
-  document.addEventListener("contextmenu", function(event) { event.preventDefault(); alert("Right click is disabled on this site."); });
+ 
 </script>
 </body>
 </html>
