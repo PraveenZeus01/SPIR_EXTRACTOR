@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPIR Extractor Pro</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2128;
+    --border: #30363d;
+    --accent: #f0a500;
+    --accent2: #e05f00;
+    --green: #3fb950;
+    --red: #f85149;
+    --blue: #58a6ff;
+    --text: #e6edf3;
+    --muted: #7d8590;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(240,165,0,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240,165,0,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 0;
+    background: rgba(13,17,23,0.95);
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  header .inner {
+    display: flex; align-items: center; justify-content: space-between;
+    max-width: 1200px; margin: 0 auto; padding: 0 24px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    clip-path: polygon(0 0, 80% 0, 100% 20%, 100% 100%, 20% 100%, 0 80%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .logo-text { font-family: var(--mono); font-weight: 600; font-size: 16px; letter-spacing: 0.05em; }
+  .logo-sub { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .badge {
+    background: rgba(240,165,0,0.15);
+    border: 1px solid rgba(240,165,0,0.3);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 2px;
+  }
+
+  /* HERO */
+  .hero { padding: 60px 0 40px; }
+  .hero-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hero-label::before { content: '//'; color: var(--muted); }
+  h1 {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 600;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    letter-spacing: -0.02em;
+  }
+  h1 span { color: var(--accent); }
+  .hero-desc { color: var(--muted); font-size: 15px; max-width: 560px; line-height: 1.6; }
+
+  /* STEPS */
+  .steps {
+    display: flex; gap: 8px; margin: 32px 0;
+    flex-wrap: wrap;
+  }
+  .step {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+  }
+  .step-num {
+    width: 22px; height: 22px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--accent); flex-shrink: 0;
+  }
+  .step-arrow { color: var(--border); margin: 0 4px; }
+
+  /* DROP ZONE */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 6px;
+    padding: 48px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface);
+    position: relative;
+    overflow: hidden;
+  }
+  .drop-zone::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(240,165,0,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .drop-zone:hover, .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(240,165,0,0.04);
+  }
+  .drop-zone.drag-over { transform: scale(1.005); }
+  .drop-icon { font-size: 40px; margin-bottom: 16px; }
+  .drop-title { font-size: 18px; font-weight: 500; margin-bottom: 8px; }
+  .drop-sub { color: var(--muted); font-size: 13px; font-family: var(--mono); }
+  .drop-limit {
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--mono);
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+  }
+  .drop-limit span { display: flex; align-items: center; gap: 4px; }
+  #fileInput { display: none; }
+
+  /* FILE LIST */
+  .file-list { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; }
+  .file-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px;
+    animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn { from { opacity:0; transform: translateY(-8px); } to { opacity:1; transform: translateY(0); } }
+  .file-icon { font-size: 20px; flex-shrink: 0; }
+  .file-info { flex: 1; min-width: 0; }
+  .file-name { font-family: var(--mono); font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-meta { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 2px; }
+  .file-status {
+    font-family: var(--mono); font-size: 11px; padding: 3px 8px;
+    border-radius: 2px; white-space: nowrap; flex-shrink: 0;
+  }
+  .file-status.pending { background: rgba(125,133,144,0.15); color: var(--muted); border: 1px solid var(--border); }
+  .file-status.processing { background: rgba(88,166,255,0.15); color: var(--blue); border: 1px solid rgba(88,166,255,0.3); }
+  .file-status.done { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+  .file-status.error { background: rgba(248,81,73,0.15); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
+  .file-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 4px; flex-shrink: 0; }
+  .file-remove:hover { color: var(--red); }
+
+  /* RUN BUTTON */
+  .run-btn {
+    margin-top: 24px;
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .run-btn:hover { background: #ffb624; transform: translateY(-1px); }
+  .run-btn:active { transform: translateY(0); }
+  .run-btn:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; transform: none; }
+
+  /* PROGRESS */
+  .progress-bar {
+    height: 3px; background: var(--surface2);
+    border-radius: 2px; margin-top: 16px; overflow: hidden;
+    display: none;
+  }
+  .progress-bar.active { display: block; }
+  .progress-fill {
+    height: 100%; background: var(--accent);
+    width: 0%; transition: width 0.4s ease;
+    border-radius: 2px;
+  }
+
+  /* RESULTS */
+  .results-section { margin-top: 48px; display: none; }
+  .results-section.visible { display: block; animation: fadeUp 0.4s ease; }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform: translateY(0); } }
+
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .section-title {
+    font-family: var(--mono); font-size: 13px; font-weight: 600;
+    color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .section-title::before { content: '» '; color: var(--muted); }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px; margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px;
+    position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .stat-card.total::before { background: var(--blue); }
+  .stat-card.valid::before { background: var(--green); }
+  .stat-card.warn::before { background: var(--accent); }
+  .stat-card.err::before { background: var(--red); }
+  .stat-val { font-family: var(--mono); font-size: 28px; font-weight: 600; line-height: 1; }
+  .stat-card.total .stat-val { color: var(--blue); }
+  .stat-card.valid .stat-val { color: var(--green); }
+  .stat-card.warn .stat-val { color: var(--accent); }
+  .stat-card.err .stat-val { color: var(--red); }
+  .stat-label { font-size: 11px; color: var(--muted); margin-top: 6px; font-family: var(--mono); }
+
+  /* VALIDATION PANEL */
+  .validation-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-bottom: 20px;
+    overflow: hidden;
+  }
+  .vp-header {
+    padding: 12px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .vp-body { padding: 12px 16px; max-height: 200px; overflow-y: auto; }
+  .vp-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(48,54,61,0.5);
+    font-size: 12px; font-family: var(--mono);
+  }
+  .vp-item:last-child { border-bottom: none; }
+  .vp-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .vp-dot.warn { background: var(--accent); }
+  .vp-dot.err { background: var(--red); }
+  .vp-dot.ok { background: var(--green); }
+  .vp-msg { color: var(--text); flex: 1; }
+  .vp-detail { color: var(--muted); }
+
+  /* DATA TABLE */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden; margin-bottom: 20px;
+  }
+  .table-toolbar {
+    padding: 12px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    flex-wrap: wrap;
+  }
+  .search-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 6px 12px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    width: 260px;
+    outline: none;
+  }
+  .search-box:focus { border-color: var(--accent); }
+  .search-box::placeholder { color: var(--muted); }
+  .filter-pills { display: flex; gap: 6px; }
+  .pill {
+    padding: 4px 10px;
+    border-radius: 2px;
+    font-family: var(--mono); font-size: 11px;
+    cursor: pointer; border: 1px solid var(--border);
+    background: var(--bg); color: var(--muted);
+    transition: all 0.15s;
+  }
+  .pill:hover, .pill.active { background: var(--accent); color: #000; border-color: var(--accent); }
+  .table-scroll { overflow-x: auto; max-height: 400px; overflow-y: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--mono); }
+  thead { position: sticky; top: 0; z-index: 10; }
+  th {
+    background: var(--surface2);
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600; font-size: 10px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  th:hover { color: var(--text); }
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(48,54,61,0.5);
+    color: var(--text);
+    max-width: 240px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  tr:hover td { background: rgba(240,165,0,0.03); }
+  tr.has-issues td { border-left: 2px solid var(--accent); }
+  tr.has-errors td { border-left: 2px solid var(--red); }
+  .tag {
+    display: inline-block;
+    padding: 2px 6px; border-radius: 2px;
+    font-size: 10px;
+  }
+  .tag.ok { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag.warn { background: rgba(240,165,0,0.15); color: var(--accent); }
+  .tag.err { background: rgba(248,81,73,0.15); color: var(--red); }
+  .no-data { padding: 40px; text-align: center; color: var(--muted); font-family: var(--mono); font-size: 13px; }
+
+  /* DOWNLOAD BUTTONS */
+  .download-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 48px; }
+  .dl-btn {
+    flex: 1; min-width: 200px;
+    padding: 14px 20px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--mono); font-size: 13px;
+    cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .dl-btn:hover { border-color: var(--accent); background: rgba(240,165,0,0.06); }
+  .dl-btn .dl-icon { font-size: 20px; }
+  .dl-btn .dl-info { text-align: left; }
+  .dl-btn .dl-name { font-weight: 600; margin-bottom: 2px; }
+  .dl-btn .dl-desc { font-size: 10px; color: var(--muted); }
+  .dl-btn.primary { background: rgba(240,165,0,0.1); border-color: var(--accent); color: var(--accent); }
+  .dl-btn.primary:hover { background: rgba(240,165,0,0.2); }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 12px 16px;
+    font-family: var(--mono); font-size: 13px;
+    display: none; z-index: 1000;
+    animation: toastIn 0.3s ease;
+    max-width: 340px;
+  }
+  .toast.show { display: flex; align-items: center; gap: 10px; }
+  .toast.success { border-left: 3px solid var(--green); }
+  .toast.error { border-left: 3px solid var(--red); }
+  @keyframes toastIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+
+  @media (max-width: 600px) {
+    .drop-zone { padding: 28px 16px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <div class="logo">
+      <div class="logo-icon">📋</div>
+      <div>
+        <div class="logo-text">SPIR EXTRACTOR</div>
+        <div class="logo-sub">Spare Parts & Interchangeability Record Processor</div>
+      </div>
+    </div>
+    <div class="badge">v2.0 PRO</div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="hero">
+    <div class="hero-label">Automated Extraction Pipeline</div>
+    <h1>Process SPIR files<br><span>fast & accurately</span></h1>
+    <p class="hero-desc">Upload up to 5 SPIR Excel files. The tool extracts all spare parts data, validates completeness, consolidates into one master table, and generates a filled Extraction Template — ready to download.</p>
+
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div> Upload SPIR files</div>
+      <div class="step-arrow">→</div>
+      <div class="step"><div class="step-num">2</div> Auto-extract & validate</div>
+      <div class="step-arrow">→</div>
+      <div class="step"><div class="step-num">3</div> Review results</div>
+      <div class="step-arrow">→</div>
+      <div class="step"><div class="step-num">4</div> Download outputs</div>
+    </div>
+  </div>
+
+  <!-- UPLOAD ZONE -->
+  <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+    <div class="drop-icon">📂</div>
+    <div class="drop-title">Drop SPIR files here or click to browse</div>
+    <div class="drop-sub">Accepts .xlsm and .xlsx files</div>
+    <div class="drop-limit">
+      <span>📄 Max 5 files</span>
+      <span>💾 Max 20MB each</span>
+      <span>🔒 Processed locally — no data leaves your browser</span>
+    </div>
+  </div>
+  <input type="file" id="fileInput" multiple accept=".xlsm,.xlsx">
+
+  <div class="file-list" id="fileList"></div>
+
+  <button class="run-btn" id="runBtn" onclick="processAll()" disabled>
+    ▶ &nbsp; EXTRACT & PROCESS ALL FILES
+  </button>
+
+  <div class="progress-bar" id="progressBar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="resultsSection">
+
+    <div class="section-header">
+      <div class="section-title">Summary Stats</div>
+    </div>
+
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card total"><div class="stat-val" id="statTotal">0</div><div class="stat-label">Total Parts Extracted</div></div>
+      <div class="stat-card valid"><div class="stat-val" id="statValid">0</div><div class="stat-label">Complete Records</div></div>
+      <div class="stat-card warn"><div class="stat-val" id="statWarn">0</div><div class="stat-label">Warnings</div></div>
+      <div class="stat-card err"><div class="stat-val" id="statErr">0</div><div class="stat-label">Missing Critical</div></div>
+      <div class="stat-card total"><div class="stat-val" id="statFiles">0</div><div class="stat-label">SPIR Files Processed</div></div>
+      <div class="stat-card valid"><div class="stat-val" id="statValue">$0</div><div class="stat-label">Total Unit Value</div></div>
+    </div>
+
+    <!-- VALIDATION -->
+    <div class="section-header">
+      <div class="section-title">Validation Report</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--muted)">Click row to highlight in table below</div>
+    </div>
+
+    <div class="validation-panel">
+      <div class="vp-header">🔍 Field Completeness Check</div>
+      <div class="vp-body" id="validationBody">
+        <div class="no-data">No data yet — process files to see validation results.</div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="section-header">
+      <div class="section-title">Consolidated Parts Table</div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <input class="search-box" id="searchBox" placeholder="🔍  Search description, tag, part..." oninput="filterTable()">
+        <div class="filter-pills">
+          <div class="pill active" onclick="setFilter('all',this)">All</div>
+          <div class="pill" onclick="setFilter('warn',this)">⚠ Warnings</div>
+          <div class="pill" onclick="setFilter('err',this)">✕ Errors</div>
+          <div class="pill" onclick="setFilter('ok',this)">✓ Complete</div>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th onclick="sortTable(0)">#</th>
+              <th onclick="sortTable(1)">ITEM</th>
+              <th onclick="sortTable(2)">DESCRIPTION</th>
+              <th onclick="sortTable(3)">QTY</th>
+              <th onclick="sortTable(4)">DWG / POS</th>
+              <th onclick="sortTable(5)">MFR PART NO</th>
+              <th onclick="sortTable(6)">SUPPLIER</th>
+              <th onclick="sortTable(7)">CURRENCY</th>
+              <th onclick="sortTable(8)">UNIT PRICE</th>
+              <th onclick="sortTable(9)">DELIVERY WKS</th>
+              <th onclick="sortTable(10)">UOM</th>
+              <th onclick="sortTable(11)">CLASSIFICATION</th>
+              <th onclick="sortTable(12)">SAP NO</th>
+              <th onclick="sortTable(13)">SPIR NO</th>
+              <th onclick="sortTable(14)">TAG NO</th>
+              <th onclick="sortTable(15)">STATUS</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="16" class="no-data">No data yet. Upload and process SPIR files.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- DOWNLOADS -->
+    <div class="section-header">
+      <div class="section-title">Download Outputs</div>
+    </div>
+    <div class="download-row">
+      <button class="dl-btn primary" onclick="downloadMaster()">
+        <span class="dl-icon">📊</span>
+        <div class="dl-info">
+          <div class="dl-name">MASTER EXTRACTION TABLE</div>
+          <div class="dl-desc">All SPIR data consolidated · Validation flags · Color coded</div>
+        </div>
+      </button>
+      <button class="dl-btn" onclick="downloadTemplate()">
+        <span class="dl-icon">📋</span>
+        <div class="dl-info">
+          <div class="dl-name">FILLED EXTRACTION TEMPLATE</div>
+          <div class="dl-desc">QatarEnergy template format · Ready to submit</div>
+        </div>
+      </button>
+      <button class="dl-btn" onclick="downloadValidation()">
+        <span class="dl-icon">🔍</span>
+        <div class="dl-info">
+          <div class="dl-name">VALIDATION REPORT</div>
+          <div class="dl-desc">All issues · Missing fields · Actionable fixes</div>
+        </div>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// =====================================================
+// STATE
+// =====================================================
+let uploadedFiles = [];
+let allExtractedData = [];
+let validationIssues = [];
+let currentFilter = 'all';
+let sortDir = {};
+
+// =====================================================
+// FILE HANDLING
+// =====================================================
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  handleFiles([...e.dataTransfer.files]);
+});
+fileInput.addEventListener('change', e => handleFiles([...e.target.files]));
+
+function handleFiles(files) {
+  const valid = files.filter(f => f.name.match(/\.(xlsx|xlsm)$/i));
+  if (!valid.length) { showToast('Please upload .xlsx or .xlsm files only', 'error'); return; }
+  const total = uploadedFiles.length + valid.length;
+  if (total > 5) { showToast('Maximum 5 files allowed', 'error'); return; }
+
+  valid.forEach(f => {
+    if (uploadedFiles.find(u => u.file.name === f.name)) return;
+    const entry = { file: f, id: Date.now() + Math.random(), status: 'pending' };
+    uploadedFiles.push(entry);
+    renderFileCard(entry);
+  });
+  updateRunBtn();
+  fileInput.value = '';
+}
+
+function renderFileCard(entry) {
+  const list = document.getElementById('fileList');
+  const el = document.createElement('div');
+  el.className = 'file-card';
+  el.id = 'fc-' + entry.id;
+  el.innerHTML = `
+    <div class="file-icon">📄</div>
+    <div class="file-info">
+      <div class="file-name">${entry.file.name}</div>
+      <div class="file-meta">${(entry.file.size/1024).toFixed(1)} KB · ${entry.file.name.split('.').pop().toUpperCase()}</div>
+    </div>
+    <div class="file-status pending" id="fs-${entry.id}">PENDING</div>
+    <button class="file-remove" onclick="removeFile('${entry.id}')">✕</button>
+  `;
+  list.appendChild(el);
+}
+
+function removeFile(id) {
+  uploadedFiles = uploadedFiles.filter(u => String(u.id) !== String(id));
+  const el = document.getElementById('fc-' + id);
+  if (el) el.remove();
+  updateRunBtn();
+}
+
+function setFileStatus(id, status, label) {
+  const el = document.getElementById('fs-' + id);
+  if (!el) return;
+  el.className = 'file-status ' + status;
+  el.textContent = label;
+}
+
+function updateRunBtn() {
+  document.getElementById('runBtn').disabled = uploadedFiles.length === 0;
+}
+
+// =====================================================
+// SPIR EXTRACTION LOGIC
+// =====================================================
+function extractSPIR(wb, fileName) {
+  const ws = wb.Sheets['MAIN SHEET'];
+  if (!ws) {
+    // Try first sheet
+    const firstSheet = wb.SheetNames[0];
+    if (!firstSheet) throw new Error('No sheets found');
+  }
+  const sheetName = wb.SheetNames.includes('MAIN SHEET') ? 'MAIN SHEET' : wb.SheetNames[0];
+  const sheet = wb.Sheets[sheetName];
+  const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
+
+  // Extract header metadata
+  let spir_no = '', tag_no = '', eqpt_make = '', eqpt_model = '', eqpt_sr_no = '', eqpt_qty = '', equipment_desc = '';
+
+  for (let i = 0; i < Math.min(10, raw.length); i++) {
+    const row = raw[i];
+    if (!row) continue;
+    const rowStr = row.map(c => c == null ? '' : String(c));
+
+    // Tag number
+    if (rowStr[1] && rowStr[1].includes('EQUIPMENT') && rowStr[1].includes('TAG')) {
+      tag_no = rowStr[2] || '';
+    }
+    // SPIR number (col 24, 0-indexed)
+    if (rowStr[24] && String(rowStr[24]).trim().startsWith('VEN')) {
+      spir_no = String(rowStr[24]).trim();
+    }
+    // Model
+    if (rowStr[1] && rowStr[1].includes('MFR TYPE OR MODEL')) {
+      eqpt_model = rowStr[2] || '';
+    }
+    // Serial
+    if (rowStr[1] && rowStr[1].includes("MFR SER")) {
+      eqpt_sr_no = rowStr[2] || '';
+    }
+    // Make/Supplier
+    if (rowStr[24] && rowStr[24].includes('Arabian') || rowStr[24] && rowStr[24].length > 5 && i === 1) {
+      eqpt_make = eqpt_make || rowStr[24] || '';
+    }
+    // Qty
+    if (rowStr[1] && rowStr[1].includes('No. OF UNITS')) {
+      eqpt_qty = rowStr[2] || '';
+    }
+    // Project desc
+    if (rowStr[23] && String(rowStr[23]).includes('EPIC')) {
+      equipment_desc = rowStr[23];
+    }
+    // Also grab from authority block
+    if (rowStr[20] && rowStr[20].includes('MANUFACTURER:')) {
+      eqpt_make = eqpt_make || rowStr[24] || '';
+    }
+  }
+
+  // Find data rows — look for rows where col 6 (0-indexed) is a number (ITEM NUMBER)
+  const dataRows = [];
+  for (let i = 5; i < raw.length; i++) {
+    const row = raw[i];
+    if (!row) continue;
+    const itemNum = row[6]; // Column G (1-indexed col 7)
+    const desc = row[8];    // Column I (1-indexed col 9)
+    if (itemNum !== null && itemNum !== undefined && !isNaN(Number(itemNum)) && Number(itemNum) > 0 && desc) {
+      // col mapping (0-indexed): 
+      // 6=ITEM_NUM, 7=QTY_IDENTICAL, 8=DESCRIPTION, 9=DWG_NO
+      // 10=MFR_PART, 11=SUPPLIER_PART, 12=MATERIAL_SPEC, 13=MATERIAL_CERT
+      // 14=SUPPLIER_OCM, 16=RECOMMENDED_MFR, 18=RECOMMENDED_SPARE
+      // 20=CURRENCY, 21=UNIT_PRICE, 22=DELIVERY, 23=MIN_MAX
+      // 24=UOM, 25=SAP_NO, 26=CLASSIFICATION
+      dataRows.push({
+        SPIR_NO: spir_no,
+        TAG_NO: tag_no,
+        EQPT_MAKE: eqpt_make,
+        EQPT_MODEL: eqpt_model,
+        EQPT_SR_NO: eqpt_sr_no,
+        EQPT_QTY: eqpt_qty,
+        ITEM_NUMBER: Number(itemNum),
+        QTY_IDENTICAL: row[7] != null ? row[7] : '',
+        DESCRIPTION: String(desc).trim(),
+        DWG_NO: row[9] != null ? String(row[9]).trim() : '',
+        MFR_PART_NO: row[10] != null ? String(row[10]).trim() : '',
+        SUPPLIER_PART: row[11] != null ? String(row[11]).trim() : '',
+        MATERIAL_SPEC: row[12] != null ? String(row[12]).trim() : '',
+        MATERIAL_CERT: row[13] != null ? String(row[13]).trim() : '',
+        SUPPLIER_OCM: row[14] != null ? String(row[14]).trim() : '',
+        CURRENCY: row[20] != null ? String(row[20]).trim() : '',
+        UNIT_PRICE: row[21] != null ? row[21] : '',
+        DELIVERY_WEEKS: row[22] != null ? row[22] : '',
+        MIN_MAX_QTY: row[23] != null ? row[23] : '',
+        UOM: row[24] != null ? String(row[24]).trim() : '',
+        SAP_NUMBER: row[25] != null ? String(row[25]).trim() : '',
+        CLASSIFICATION: row[26] != null ? String(row[26]).trim() : '',
+        SOURCE_FILE: fileName,
+        _rowIndex: i,
+      });
+    }
+  }
+
+  return { meta: { spir_no, tag_no, eqpt_make, eqpt_model, eqpt_sr_no, eqpt_qty, equipment_desc }, rows: dataRows };
+}
+
+// =====================================================
+// VALIDATION
+// =====================================================
+const CRITICAL_FIELDS = ['DESCRIPTION', 'ITEM_NUMBER', 'QTY_IDENTICAL'];
+const REQUIRED_FIELDS = ['DWG_NO', 'CURRENCY', 'UNIT_PRICE', 'DELIVERY_WEEKS', 'UOM', 'CLASSIFICATION'];
+const OPTIONAL_FIELDS = ['MFR_PART_NO', 'SUPPLIER_OCM', 'SAP_NUMBER', 'MIN_MAX_QTY'];
+
+function validateRow(row, idx) {
+  const issues = [];
+  let status = 'ok';
+
+  CRITICAL_FIELDS.forEach(f => {
+    const val = row[f];
+    if (val === null || val === undefined || val === '' || val === 'NA' || val === 'TBA') {
+      issues.push({ type: 'err', field: f, msg: `Item ${row.ITEM_NUMBER}: CRITICAL — "${f}" is missing or placeholder` });
+      status = 'err';
+    }
+  });
+
+  REQUIRED_FIELDS.forEach(f => {
+    const val = row[f];
+    if (val === null || val === undefined || val === '' || val === 'TBA') {
+      issues.push({ type: 'warn', field: f, msg: `Item ${row.ITEM_NUMBER}: "${f.replace(/_/g,' ')}" not filled` });
+      if (status !== 'err') status = 'warn';
+    }
+  });
+
+  // Price check
+  if (row.UNIT_PRICE !== '' && isNaN(Number(row.UNIT_PRICE))) {
+    issues.push({ type: 'warn', field: 'UNIT_PRICE', msg: `Item ${row.ITEM_NUMBER}: Unit price is non-numeric "${row.UNIT_PRICE}"` });
+    if (status !== 'err') status = 'warn';
+  }
+
+  // SAP number check
+  if (!row.SAP_NUMBER || row.SAP_NUMBER === '' || row.SAP_NUMBER === 'TBA') {
+    issues.push({ type: 'warn', field: 'SAP_NUMBER', msg: `Item ${row.ITEM_NUMBER}: SAP Number not assigned` });
+    if (status !== 'err') status = 'warn';
+  }
+
+  return { status, issues };
+}
+
+// =====================================================
+// MAIN PROCESS
+// =====================================================
+async function processAll() {
+  if (!uploadedFiles.length) return;
+  allExtractedData = [];
+  validationIssues = [];
+
+  const btn = document.getElementById('runBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳  Processing...';
+
+  const pb = document.getElementById('progressBar');
+  const pf = document.getElementById('progressFill');
+  pb.classList.add('active');
+
+  for (let i = 0; i < uploadedFiles.length; i++) {
+    const entry = uploadedFiles[i];
+    setFileStatus(entry.id, 'processing', 'READING...');
+    pf.style.width = ((i / uploadedFiles.length) * 80) + '%';
+
+    try {
+      const data = await readFile(entry.file);
+      const wb = XLSX.read(data, { type: 'array' });
+      setFileStatus(entry.id, 'processing', 'EXTRACTING...');
+
+      const result = extractSPIR(wb, entry.file.name);
+      result.rows.forEach((row, ri) => {
+        const v = validateRow(row, ri);
+        row._status = v.status;
+        row._issues = v.issues;
+        allExtractedData.push(row);
+        validationIssues.push(...v.issues);
+      });
+
+      setFileStatus(entry.id, 'done', `✓ ${result.rows.length} PARTS`);
+    } catch (err) {
+      setFileStatus(entry.id, 'error', 'ERROR');
+      validationIssues.push({ type: 'err', field: 'FILE', msg: `${entry.file.name}: ${err.message}` });
+    }
+
+    await sleep(100);
+  }
+
+  pf.style.width = '100%';
+  await sleep(300);
+  pb.classList.remove('active');
+  pf.style.width = '0%';
+
+  btn.disabled = false;
+  btn.innerHTML = '✓ &nbsp; DONE — CLICK TO REPROCESS';
+
+  renderResults();
+  document.getElementById('resultsSection').classList.add('visible');
+  document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  showToast(`✓ Extracted ${allExtractedData.length} parts from ${uploadedFiles.length} file(s)`, 'success');
+}
+
+function readFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(new Uint8Array(e.target.result));
+    reader.onerror = () => reject(new Error('File read failed'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// =====================================================
+// RENDER RESULTS
+// =====================================================
+function renderResults() {
+  const total = allExtractedData.length;
+  const errs = allExtractedData.filter(r => r._status === 'err').length;
+  const warns = allExtractedData.filter(r => r._status === 'warn').length;
+  const valid = allExtractedData.filter(r => r._status === 'ok').length;
+  const totalVal = allExtractedData.reduce((s, r) => s + (isNaN(Number(r.UNIT_PRICE)) ? 0 : Number(r.UNIT_PRICE)), 0);
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statValid').textContent = valid;
+  document.getElementById('statWarn').textContent = warns;
+  document.getElementById('statErr').textContent = errs;
+  document.getElementById('statFiles').textContent = uploadedFiles.length;
+  document.getElementById('statValue').textContent = '$' + totalVal.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+
+  renderValidation();
+  renderTable(allExtractedData);
+}
+
+function renderValidation() {
+  const body = document.getElementById('validationBody');
+  if (!validationIssues.length) {
+    body.innerHTML = '<div class="vp-item"><div class="vp-dot ok"></div><div class="vp-msg">All records are complete ✓</div></div>';
+    return;
+  }
+  const byType = { err: [], warn: [] };
+  validationIssues.forEach(v => { if (byType[v.type]) byType[v.type].push(v); });
+
+  let html = '';
+  // Summary line
+  html += `<div class="vp-item"><div class="vp-dot ${byType.err.length ? 'err' : 'ok'}"></div><div class="vp-msg">${byType.err.length} critical errors · ${byType.warn.length} warnings found across ${allExtractedData.length} items</div></div>`;
+
+  byType.err.forEach(v => {
+    html += `<div class="vp-item"><div class="vp-dot err"></div><div class="vp-msg">${v.msg}</div></div>`;
+  });
+  byType.warn.slice(0, 30).forEach(v => {
+    html += `<div class="vp-item"><div class="vp-dot warn"></div><div class="vp-msg">${v.msg}</div></div>`;
+  });
+  if (byType.warn.length > 30) {
+    html += `<div class="vp-item"><div class="vp-dot warn"></div><div class="vp-msg vp-detail">... and ${byType.warn.length - 30} more warnings (download report for full list)</div></div>`;
+  }
+  body.innerHTML = html;
+}
+
+function renderTable(data) {
+  const search = (document.getElementById('searchBox').value || '').toLowerCase();
+  let filtered = data.filter(row => {
+    if (currentFilter === 'warn' && row._status !== 'warn') return false;
+    if (currentFilter === 'err' && row._status !== 'err') return false;
+    if (currentFilter === 'ok' && row._status !== 'ok') return false;
+    if (search) {
+      const hay = [row.DESCRIPTION, row.TAG_NO, row.SPIR_NO, row.MFR_PART_NO, row.SUPPLIER_OCM, row.CLASSIFICATION].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  const tbody = document.getElementById('tableBody');
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="16" class="no-data">No matching records</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map((row, i) => {
+    const statusTag = row._status === 'ok'
+      ? '<span class="tag ok">✓ OK</span>'
+      : row._status === 'warn'
+        ? '<span class="tag warn">⚠ WARN</span>'
+        : '<span class="tag err">✕ ERROR</span>';
+    const rowClass = row._status === 'err' ? 'has-errors' : row._status === 'warn' ? 'has-issues' : '';
+    const price = row.UNIT_PRICE !== '' ? Number(row.UNIT_PRICE).toLocaleString() : '—';
+    return `<tr class="${rowClass}" title="${(row._issues||[]).map(i=>i.msg).join('\n')}">
+      <td>${i+1}</td>
+      <td>${row.ITEM_NUMBER}</td>
+      <td title="${row.DESCRIPTION}">${row.DESCRIPTION}</td>
+      <td>${row.QTY_IDENTICAL || '—'}</td>
+      <td title="${row.DWG_NO}">${row.DWG_NO || '—'}</td>
+      <td>${row.MFR_PART_NO || '—'}</td>
+      <td>${row.SUPPLIER_OCM || '—'}</td>
+      <td>${row.CURRENCY ? row.CURRENCY.split(' ')[0] : '—'}</td>
+      <td>${price}</td>
+      <td>${row.DELIVERY_WEEKS || '—'}</td>
+      <td>${row.UOM ? row.UOM.split(' ')[0] : '—'}</td>
+      <td>${row.CLASSIFICATION || '—'}</td>
+      <td>${row.SAP_NUMBER || '—'}</td>
+      <td title="${row.SPIR_NO}">${row.SPIR_NO ? row.SPIR_NO.substring(0,20)+'…' : '—'}</td>
+      <td>${row.TAG_NO || '—'}</td>
+      <td>${statusTag}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTable() { renderTable(allExtractedData); }
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderTable(allExtractedData);
+}
+
+function sortTable(col) {
+  sortDir[col] = !sortDir[col];
+  const keys = ['_seq','ITEM_NUMBER','DESCRIPTION','QTY_IDENTICAL','DWG_NO','MFR_PART_NO','SUPPLIER_OCM','CURRENCY','UNIT_PRICE','DELIVERY_WEEKS','UOM','CLASSIFICATION','SAP_NUMBER','SPIR_NO','TAG_NO','_status'];
+  allExtractedData.sort((a,b) => {
+    let va = a[keys[col]] ?? '', vb = b[keys[col]] ?? '';
+    if (!isNaN(Number(va)) && !isNaN(Number(vb))) { va = Number(va); vb = Number(vb); }
+    else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+    return sortDir[col] ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+  });
+  renderTable(allExtractedData);
+}
+
+// =====================================================
+// DOWNLOAD: MASTER EXTRACTION TABLE
+// =====================================================
+function downloadMaster() {
+  if (!allExtractedData.length) { showToast('No data to download yet', 'error'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Master Data
+  const headers = [
+    'SPIR_NO','TAG NO','EQPT_MAKE','EQPT_MODEL','EQPT_SR NO','EQPT_QTY',
+    'ITEM NUMBER','QUANTITY IDENTICAL PARTS','DESCRIPTION OF PARTS',
+    'DWG No. INCL POS No.','MANUFACTURER PART NUMBER','SUPPLIER PART NO',
+    'MATERIAL SPEC','MATERIAL CERT','SUPPLIER/OCM NAME',
+    'CURRENCY','UNIT PRICE','DELIVERY TIME IN WEEKS','MIN/MAX STOCK QTY',
+    'UNIT OF MEASURE','SAP NUMBER','CLASSIFICATION OF PARTS',
+    'SOURCE FILE','STATUS','VALIDATION NOTES'
+  ];
+
+  const rows = allExtractedData.map(r => [
+    r.SPIR_NO, r.TAG_NO, r.EQPT_MAKE, r.EQPT_MODEL, r.EQPT_SR_NO, r.EQPT_QTY,
+    r.ITEM_NUMBER, r.QTY_IDENTICAL, r.DESCRIPTION,
+    r.DWG_NO, r.MFR_PART_NO, r.SUPPLIER_PART,
+    r.MATERIAL_SPEC, r.MATERIAL_CERT, r.SUPPLIER_OCM,
+    r.CURRENCY, r.UNIT_PRICE, r.DELIVERY_WEEKS, r.MIN_MAX_QTY,
+    r.UOM, r.SAP_NUMBER, r.CLASSIFICATION,
+    r.SOURCE_FILE, r._status.toUpperCase(),
+    (r._issues || []).map(i => i.msg).join('; ')
+  ]);
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  // Column widths
+  ws['!cols'] = [
+    {wch:28},{wch:14},{wch:36},{wch:18},{wch:12},{wch:8},
+    {wch:8},{wch:10},{wch:42},{wch:30},{wch:16},{wch:16},
+    {wch:20},{wch:20},{wch:20},{wch:12},{wch:10},{wch:10},{wch:12},
+    {wch:14},{wch:12},{wch:18},{wch:26},{wch:8},{wch:50}
+  ];
+  XLSX.utils.book_append_sheet(wb, ws, 'MASTER DATA');
+
+  // Sheet 2: Summary per SPIR
+  const spirGroups = {};
+  allExtractedData.forEach(r => {
+    const k = r.SPIR_NO || r.SOURCE_FILE;
+    if (!spirGroups[k]) spirGroups[k] = { spir: r.SPIR_NO, tag: r.TAG_NO, make: r.EQPT_MAKE, model: r.EQPT_MODEL, rows: [] };
+    spirGroups[k].rows.push(r);
+  });
+  const sumHeaders = ['SPIR NUMBER','TAG NO','EQPT MAKE','EQPT MODEL','TOTAL PARTS','COMPLETE','WARNINGS','ERRORS','TOTAL VALUE (USD)'];
+  const sumRows = Object.values(spirGroups).map(g => [
+    g.spir, g.tag, g.make, g.model,
+    g.rows.length,
+    g.rows.filter(r=>r._status==='ok').length,
+    g.rows.filter(r=>r._status==='warn').length,
+    g.rows.filter(r=>r._status==='err').length,
+    g.rows.reduce((s,r)=>s+(isNaN(Number(r.UNIT_PRICE))?0:Number(r.UNIT_PRICE)),0)
+  ]);
+  const ws2 = XLSX.utils.aoa_to_sheet([sumHeaders, ...sumRows]);
+  ws2['!cols'] = [{wch:28},{wch:14},{wch:36},{wch:18},{wch:12},{wch:10},{wch:10},{wch:8},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'SUMMARY BY SPIR');
+
+  XLSX.writeFile(wb, `SPIR_MASTER_EXTRACTION_${yyyymmdd()}.xlsx`);
+  showToast('✓ Master extraction table downloaded', 'success');
+}
+
+// =====================================================
+// DOWNLOAD: FILLED EXTRACTION TEMPLATE
+// =====================================================
+function downloadTemplate() {
+  if (!allExtractedData.length) { showToast('No data to download yet', 'error'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  // Match the original EXTRACTION_TEMPLATE format columns
+  const headers = [
+    'SPIR_NO','TAG NO','EQPT_MAKE','EQPT_MODEL','EQPT_SR NO','EQPT_QTY',
+    'QUANTITY_ IDENTICAL PARTS FITTED','ITEM NUMBER','DESCRIPTION OF PARTS',
+    'NEW DESCRIPTION OF PARTS','DWG No. INCL POS N No.',
+    'MANUFACTURER PART NUMBER','SUPPLIER/OCM NAME',
+    'CURRENCY','UNIT PRICE','DELIVERY TIME IN WEEKS',
+    'MIN/MAX STOCK LVLS QTY','UNIT  OF MEASURE','SAP NUMBER',
+    'CLASSIFICATION OF PARTS','duplicate_id','sheet'
+  ];
+
+  const rows = allExtractedData.map((r, i) => [
+    r.SPIR_NO, r.TAG_NO, r.EQPT_MAKE, r.EQPT_MODEL, r.EQPT_SR_NO, r.EQPT_QTY,
+    r.QTY_IDENTICAL, r.ITEM_NUMBER, r.DESCRIPTION,
+    r.DESCRIPTION, // NEW DESCRIPTION = same initially, user edits
+    r.DWG_NO, r.MFR_PART_NO, r.SUPPLIER_OCM,
+    r.CURRENCY, r.UNIT_PRICE, r.DELIVERY_WEEKS,
+    r.MIN_MAX_QTY, r.UOM, r.SAP_NUMBER,
+    r.CLASSIFICATION, i, 'MAIN SHEET'
+  ]);
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  ws['!cols'] = headers.map((h,i) => ({ wch: [28,14,36,18,12,8,10,8,42,42,30,18,20,12,10,10,10,14,10,18,8,12][i] || 14 }));
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet 1');
+
+  XLSX.writeFile(wb, `EXTRACTION_TEMPLATE_FILLED_${yyyymmdd()}.xlsx`);
+  showToast('✓ Filled extraction template downloaded', 'success');
+}
+
+// =====================================================
+// DOWNLOAD: VALIDATION REPORT
+// =====================================================
+function downloadValidation() {
+  if (!validationIssues.length && !allExtractedData.length) { showToast('No data yet', 'error'); return; }
+
+  const wb = XLSX.utils.book_new();
+
+  // Issues sheet
+  const h = ['TYPE','FIELD','MESSAGE','SPIR FILE'];
+  const rows = validationIssues.map(v => [v.type.toUpperCase(), v.field || '', v.msg, v.file || '']);
+  if (!rows.length) rows.push(['OK','—','All records complete — no issues found','']);
+
+  const ws = XLSX.utils.aoa_to_sheet([h, ...rows]);
+  ws['!cols'] = [{wch:8},{wch:20},{wch:80},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, ws, 'ISSUES');
+
+  // Stats
+  const statsH = ['METRIC','VALUE'];
+  const statsD = [
+    ['Total Parts Extracted', allExtractedData.length],
+    ['Complete Records', allExtractedData.filter(r=>r._status==='ok').length],
+    ['Records with Warnings', allExtractedData.filter(r=>r._status==='warn').length],
+    ['Records with Errors', allExtractedData.filter(r=>r._status==='err').length],
+    ['Total Critical Errors', validationIssues.filter(v=>v.type==='err').length],
+    ['Total Warnings', validationIssues.filter(v=>v.type==='warn').length],
+    ['Files Processed', uploadedFiles.length],
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet([statsH, ...statsD]);
+  ws2['!cols'] = [{wch:30},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'STATS');
+
+  XLSX.writeFile(wb, `SPIR_VALIDATION_REPORT_${yyyymmdd()}.xlsx`);
+  showToast('✓ Validation report downloaded', 'success');
+}
+
+// =====================================================
+// UTILS
+// =====================================================
+function yyyymmdd() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.className = 'toast show ' + type;
+  t.innerHTML = (type === 'success' ? '✓' : '✕') + ' &nbsp; ' + msg;
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
