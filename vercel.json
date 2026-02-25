@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/SPIR_Extractor_App.html" }
+  ]
+}
