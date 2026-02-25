@@ -1129,6 +1129,7 @@ function showToast(msg, type='success') {
   t.innerHTML = (type === 'success' ? '✓' : '✕') + ' &nbsp; ' + msg;
   setTimeout(() => t.classList.remove('show'), 3500);
 }
+  document.addEventListener("contextmenu", function(event) { event.preventDefault(); alert("Right click is disabled on this site."); });
 </script>
 </body>
 </html>
